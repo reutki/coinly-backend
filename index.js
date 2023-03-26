@@ -12,7 +12,7 @@ app.use(cors());
 app.options("*", cors());
 
 const NewsAPI = require("newsapi");
-const newsapi = new NewsAPI("6ff601330e154db7bff9950546ba240e");
+const newsapi = new NewsAPI(`${process.env.NEWS_KEY}`);
 
 app.get("/news", (req, res) => {
   newsapi.v2
