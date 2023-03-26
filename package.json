@@ -1,0 +1,19 @@
+{
+  "name": "coinly-backend",
+  "version": "1.0.0",
+  "description": "the backend of the coinly project",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm index.js",
+    "start": "nodemon index.js"
+  },
+  "author": "Reutki Marcu",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "newsapi": "^2.4.1",
+    "nodemon": "^2.0.22"
+  }
+}
