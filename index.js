@@ -2,7 +2,13 @@
 const dotenv = require("dotenv");
 require("dotenv").config();
 const express = require("express");
+const mongoose = require("mongoose");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+
+//models
+const User = require("./models/User");
 
 //api endpoints
 dotenv.config();
@@ -10,7 +16,87 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 app.options("*", cors());
+app.use(cookieParser());
 
+//Database connection:
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => {
+    console.log("Database connected successfully");
+  })
+  .catch((err) => console.log(err));
+
+//API Endoints:
+
+//register a new user
+app.post("/register", async (req, res) => {
+  try {
+    const { name, surname, username, password } = req.body;
+    const userData = {
+      name: name,
+      surname: surname,
+      username: username,
+      password: password,
+    };
+    const updatedUser = await User.create(userData, { new: true });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+//authenticate user
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const userData = { username: username, password: password };
+    console.log("userData:", userData);
+
+    const userLog = await User.findOne(userData);
+    console.log("userLog:", userLog);
+
+    if (!userLog) {
+      return res.status(403).send("Invalid login credentials");
+    }
+
+    if (
+      userData.password === userLog.password &&
+      userData.username === userLog.username
+    ) {
+      res.status(200).json("authenticated");
+    } else {
+      res.status(403).send("Invalid login credentials");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+function checkToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  //see whats is the token , the default should be Bearer token, we are splitting the bearer and the token apart using the space between
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token == null) {
+    res.sendStatus(401);
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, userLog) => {
+    if (err) return res.status(403);
+    req.userLog = userLog;
+    next();
+  });
+}
+function generateToken(userLog) {
+  return jwt.sign(userLog, process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: "10m",
+  });
+}
+
+//NewsAPI to get articles for the newstab in the frontend
 const NewsAPI = require("newsapi");
 const newsapi = new NewsAPI(`${process.env.NEWS_KEY}`);
 
