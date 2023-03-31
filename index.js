@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 
 //models
 const User = require("./models/User");
+const Favorite = require("./models/Favourites");
 
 //api endpoints
 dotenv.config();
@@ -30,8 +31,7 @@ mongoose
   .catch((err) => console.log(err));
 
 //API Endoints:
-
-//register a new user
+//the registration endpoint to register the user
 app.post("/register", async (req, res) => {
   try {
     const { name, surname, username, password } = req.body;
@@ -54,11 +54,7 @@ app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const userData = { username: username, password: password };
-    console.log("userData:", userData);
-
     const userLog = await User.findOne(userData);
-    console.log("userLog:", userLog);
-
     if (!userLog) {
       return res.status(403).send("Invalid login credentials");
     }
@@ -76,6 +72,46 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+
+//the endpoint to add a favourite coin
+//the endpoint to add a favourite coin
+app.post("/addfavourite", async (req, res) => {
+  try {
+    const { coin, username } = req.body;
+    const user = await User.findOne({ username: username });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+    const updateFavourite = await Favorite.findOneAndUpdate(
+      { userId: user._id },
+      { $push: { favourites: coin } },
+      { new: true, upsert: true }
+    );
+    res.json(updateFavourite);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+//the endpoint to get the favourite coins of the user
+// app.get("/getFavourite", async (req, res) => {
+//   try {
+//     const { name, surname, username, password } = req.body;
+//     const userData = {
+//       name: name,
+//       surname: surname,
+//       username: username,
+//       password: password,
+//     };
+//     const updatedUser = await User.create(userData, { new: true });
+
+//     res.json(updatedUser);
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send("Server Error");
+//   }
+// });
 
 function checkToken(req, res, next) {
   const authHeader = req.headers["authorization"];
