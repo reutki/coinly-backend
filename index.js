@@ -72,8 +72,6 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-
-//the endpoint to add a favourite coin
 //the endpoint to add a favourite coin
 app.post("/addfavourite", async (req, res) => {
   try {
@@ -82,9 +80,43 @@ app.post("/addfavourite", async (req, res) => {
     if (!user) {
       return res.status(404).send("User not found");
     }
+    const favorites = await Favorite.findOne({ userId: user._id });
+    if (favorites.favourites.includes(coin)) {
+      return res.status(400).send("Coin is already in favorites");
+    }
+    if (coin !== "") {
+      const updateFavourite = await Favorite.findOneAndUpdate(
+        { userId: user._id },
+        { $push: { favourites: coin } },
+        { new: true, upsert: true }
+      );
+      res.json(updateFavourite);
+    } else {
+      return res.status(400).send("Invalid coin");
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+//the endpoint to remove an item from the favourites
+app.post("/removefavourite", async (req, res) => {
+  try {
+    const { coin, username } = req.body;
+    const user = await User.findOne({ username: username });
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Check if coin is valid
+    if ((!coin && coin == "") || null || undefined) {
+      return res.status(400).send("Invalid coin");
+    }
+
     const updateFavourite = await Favorite.findOneAndUpdate(
       { userId: user._id },
-      { $push: { favourites: coin } },
+      { $pull: { favourites: coin } },
       { new: true, upsert: true }
     );
     res.json(updateFavourite);
@@ -93,6 +125,30 @@ app.post("/addfavourite", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
+// app.get("/getfavourite", async (req, res) => {
+//   try {
+//     const { coin, username } = req.body;
+//     const user = await User.findOne({ username: username });
+//     if (!user) {
+//       return res.status(404).send("User not found");
+//     }
+
+//     // Check if coin is valid
+//     if (!coin) {
+//       return res.status(400).send("Invalid coin");
+//     }
+
+//     const updateFavourite = await Favorite.findOneAndUpdate(
+//       { userId: user._id },
+//       { $pull: { favourites: coin } },
+//       { new: true, upsert: true }
+//     );
+//     res.json(updateFavourite);
+//   } catch (error) {
+//     console.error(error.message);
+//     res.status(500).send("Server Error");
+//   }
+// });
 
 //the endpoint to get the favourite coins of the user
 // app.get("/getFavourite", async (req, res) => {
