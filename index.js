@@ -110,21 +110,27 @@ app.post("/removefavourite", async (req, res) => {
     }
 
     // Check if coin is valid
-    if ((!coin && coin == "") || null || undefined) {
+    if (!coin || coin === "") {
       return res.status(400).send("Invalid coin");
     }
 
-    const updateFavourite = await Favorite.findOneAndUpdate(
-      { userId: user._id },
-      { $pull: { favourites: coin } },
-      { new: true, upsert: true }
-    );
-    res.json(updateFavourite);
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send("Server Error");
+    const favorites = await Favorite.findOne({ userId: user._id });
+    if (!favorites) {
+      return res.status(404).send("Favorites not found");
+    }
+    if (!favorites.favourites.includes(coin)) {
+      return res.status(400).send("Coin is not in favorites");
+    }
+
+    await favorites.updateOne({ $pull: { favourites: coin } });
+
+    return res.status(200).send("Coin removed from favorites");
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send("Internal Server Error");
   }
 });
+
 // app.get("/getfavourite", async (req, res) => {
 //   try {
 //     const { coin, username } = req.body;
