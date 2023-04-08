@@ -131,49 +131,22 @@ app.post("/removefavourite", async (req, res) => {
   }
 });
 
-// app.get("/getfavourite", async (req, res) => {
-//   try {
-//     const { coin, username } = req.body;
-//     const user = await User.findOne({ username: username });
-//     if (!user) {
-//       return res.status(404).send("User not found");
-//     }
-
-//     // Check if coin is valid
-//     if (!coin) {
-//       return res.status(400).send("Invalid coin");
-//     }
-
-//     const updateFavourite = await Favorite.findOneAndUpdate(
-//       { userId: user._id },
-//       { $pull: { favourites: coin } },
-//       { new: true, upsert: true }
-//     );
-//     res.json(updateFavourite);
-//   } catch (error) {
-//     console.error(error.message);
-//     res.status(500).send("Server Error");
-//   }
-// });
-
 //the endpoint to get the favourite coins of the user
-// app.get("/getFavourite", async (req, res) => {
-//   try {
-//     const { name, surname, username, password } = req.body;
-//     const userData = {
-//       name: name,
-//       surname: surname,
-//       username: username,
-//       password: password,
-//     };
-//     const updatedUser = await User.create(userData, { new: true });
-
-//     res.json(updatedUser);
-//   } catch (error) {
-//     console.error(error.message);
-//     res.status(500).send("Server Error");
-//   }
-// });
+app.get("/getFavorites/:username", async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await User.findOne({ username: username });
+    const favorites = await Favorite.findOne({ userId: user._id });
+    if (!favorites) {
+      return res.status(404).send("No User Found for the given username");
+    } else {
+      return res.json(favorites?.favourites);
+    }
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Server Error");
+  }
+});
 
 function checkToken(req, res, next) {
   const authHeader = req.headers["authorization"];
