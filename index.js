@@ -136,12 +136,16 @@ app.get("/getFavorites/:username", async (req, res) => {
   try {
     const { username } = req.params;
     const user = await User.findOne({ username: username });
-    const favorites = await Favorite.findOne({ userId: user._id });
+    let favorites = await Favorite.findOne({ userId: user._id });
+
     if (!favorites) {
-      return res.status(404).send("No User Found for the given username");
-    } else {
-      return res.json(favorites?.favourites);
+      console.log("no favoritefound");
+      favorites = new Favorite({ userId: user._id, favourites: [] });
+      await favorites.save();
+      console.log("created new favorites");
     }
+
+    return res.json(favorites.favourites);
   } catch (error) {
     console.error(error.message);
     res.status(500).send("Server Error");
