@@ -117,11 +117,11 @@ app.post("/removefavourite", async (req, res) => {
       return res.status(404).json({ error: "Favorites not found" });
     }
 
-    if (!favorites.favourites.includes(coin)) {
-      return res.status(404).json({ error: "Coin not found in favorites" });
-    }
-
-    await favorites.updateOne({ $pull: { favourites: coin } });
+    const updatedFavorites = favorites.favourites.filter(
+      (item) => item.uuid !== coin
+    );
+    favorites.favourites = updatedFavorites;
+    await favorites.save();
 
     return res.status(200).json({ message: "Coin removed from favorites" });
   } catch (err) {
