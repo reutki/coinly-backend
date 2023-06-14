@@ -72,17 +72,16 @@ app.post("/login", async (req, res) => {
     res.status(500).send("Server Error");
   }
 });
-//the endpoint to add a favourite coin
 app.post("/addfavourite", async (req, res) => {
   try {
     const { coin, username } = req.body;
     const user = await User.findOne({ username: username });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(404).json({ error: "User not found" });
     }
     const favorites = await Favorite.findOne({ userId: user._id });
     if (favorites.favourites.includes(coin)) {
-      return res.status(400).send("Coin is already in favorites");
+      return res.status(400).json({ error: "Coin is already in favorites" });
     }
     if (coin !== "") {
       const updateFavourite = await Favorite.findOneAndUpdate(
@@ -90,44 +89,44 @@ app.post("/addfavourite", async (req, res) => {
         { $push: { favourites: coin } },
         { new: true, upsert: true }
       );
-      res.json(updateFavourite);
+      return res.json(updateFavourite);
     } else {
-      return res.status(400).send("Invalid coin");
+      return res.status(400).json({ error: "Invalid coin" });
     }
   } catch (error) {
     console.error(error.message);
-    res.status(500).send("Server Error");
+    return res.status(500).json({ error: "Server Error" });
   }
 });
 
-//the endpoint to remove an item from the favourites
 app.post("/removefavourite", async (req, res) => {
   try {
     const { coin, username } = req.body;
     const user = await User.findOne({ username: username });
     if (!user) {
-      return res.status(404).send("User not found");
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Check if coin is valid
     if (!coin || coin === "") {
-      return res.status(400).send("Invalid coin");
+      return res.status(400).json({ error: "Invalid coin" });
     }
 
     const favorites = await Favorite.findOne({ userId: user._id });
     if (!favorites) {
-      return res.status(404).send("Favorites not found");
+      return res.status(404).json({ error: "Favorites not found" });
     }
+
     if (!favorites.favourites.includes(coin)) {
-      return res.status(400).send("Coin is not in favorites");
+      return res.status(404).json({ error: "Coin not found in favorites" });
     }
 
     await favorites.updateOne({ $pull: { favourites: coin } });
 
-    return res.status(200).send("Coin removed from favorites");
+    return res.status(200).json({ message: "Coin removed from favorites" });
   } catch (err) {
     console.error(err);
-    return res.status(500).send("Internal Server Error");
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -139,6 +138,7 @@ app.get("/getFavorites/:username", async (req, res) => {
     let favorites = await Favorite.findOne({ userId: user._id });
 
     if (!favorites) {
+      res.send([]);
       console.log("no favoritefound");
       favorites = new Favorite({ userId: user._id, favourites: [] });
       await favorites.save();
