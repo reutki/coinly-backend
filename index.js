@@ -79,17 +79,16 @@ app.post("/addfavourite", async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+
     const favorites = await Favorite.findOne({ userId: user._id });
-    if (favorites.favourites.includes(coin)) {
+    if (favorites.favourites.some((fav) => fav.uuid === coin)) {
       return res.status(400).json({ error: "Coin is already in favorites" });
     }
+
     if (coin !== "") {
-      const updateFavourite = await Favorite.findOneAndUpdate(
-        { userId: user._id },
-        { $push: { favourites: coin } },
-        { new: true, upsert: true }
-      );
-      return res.json(updateFavourite);
+      favorites.favourites.push({ uuid: coin });
+      await favorites.save();
+      return res.json(favorites);
     } else {
       return res.status(400).json({ error: "Invalid coin" });
     }
